@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import ImageUploader from '../components/ImageUploader';
-import FoodList from '../components/FoodList';
-import MealForm from '../components/MealForm';
-import TabNavigation, { TabType } from '../components/TabNavigation';
-import NutritionSummary from '../components/NutritionSummary';
-import { AIAnalysisResult, DailyNutrition, Food, Meal } from '../types';
-import { saveMeal, getMealsForDate, deleteMeal } from '../utils/storage';
+import ImageUploader from './ImageUploader';
+import FoodList from './FoodList';
+import MealForm from './MealForm';
+import TabNavigation, { TabType } from './TabNavigation';
+import NutritionSummary from './NutritionSummary';
+import { AIAnalysisResult, DailyNutrition, Food, Meal } from './index';
+import { saveMeal, getMealsForDate, deleteMeal } from './storage';
 
 export default function Home() {
   // States

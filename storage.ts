@@ -1,4 +1,4 @@
-import { DailyNutrition, Meal } from "../types";
+import { DailyNutrition, Meal } from "./index";
 
 // Get meals for a specific date
 export const getMealsForDate = (date: string): DailyNutrition => {
@@ -124,4 +124,4 @@ const calculateTotals = (meals: Meal[]) => {
     totalCarbs,
     totalFats,
   };
-}; 
+};

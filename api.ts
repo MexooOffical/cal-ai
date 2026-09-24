@@ -1,4 +1,4 @@
-import { AIAnalysisResult, Food } from "../types";
+import { AIAnalysisResult, Food } from "./index";
 import OpenAI from "openai";
 
 // Placeholder for your OpenAI API key - should be stored in environment variables

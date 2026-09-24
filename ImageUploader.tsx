@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { analyzeFoodImage, imageToBase64 } from '../utils/api';
-import { AIAnalysisResult } from '../types';
+import { analyzeFoodImage, imageToBase64 } from './api';
+import { AIAnalysisResult } from './index';
 
 interface ImageUploaderProps {
   onAnalysisComplete: (result: AIAnalysisResult, imageUrl: string) => void;
@@ -23,13 +23,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check if the file is an image
     if (!file.type.startsWith('image/')) {
       setError('Please upload an image file');
       return;
     }
 
-    // Create a preview URL
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
     setError(null);
@@ -49,13 +47,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         return;
       }
 
-      // Convert image to base64
       const base64Image = await imageToBase64(file);
-      
-      // Analyze image using OpenAI
       const analysisResult = await analyzeFoodImage(base64Image);
-      
-      // Call the callback with the analysis result
       onAnalysisComplete(analysisResult, previewUrl);
       
     } catch (err) {
