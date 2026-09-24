@@ -10,154 +10,62 @@ interface ImageUploaderProps {
   setIsLoading: (loading: boolean) => void;
 }
 
-const ImageUploader: React.FC<ImageUploaderProps> = ({ 
-  onAnalysisComplete, 
-  isLoading, 
-  setIsLoading 
-}) => {
+const ImageUploader: React.FC<ImageUploaderProps> = ({ onAnalysisComplete, isLoading, setIsLoading }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
-
     if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file');
+      setError('Please upload an image file.');
       return;
     }
-
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
+    if (file.size > 8 * 1024 * 1024) {
+      setError('Please choose an image smaller than 8 MB.');
+      return;
+    }
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(URL.createObjectURL(file));
     setError(null);
   };
 
   const handleUpload = async () => {
-    if (!previewUrl || isLoading) return;
+    const file = fileInputRef.current?.files?.[0];
+    if (!file || isLoading) return;
 
     try {
       setIsLoading(true);
       setError(null);
-
-      const file = fileInputRef.current?.files?.[0];
-      if (!file) {
-        setError('No file selected');
-        setIsLoading(false);
-        return;
-      }
-
-      const base64Image = await imageToBase64(file);
-      const analysisResult = await analyzeFoodImage(base64Image);
-      onAnalysisComplete(analysisResult, previewUrl);
-      
-    } catch (err) {
-      console.error('Error during image analysis:', err);
-      setError('Failed to analyze image. Please try again.');
+      const result = await analyzeFoodImage(await imageToBase64(file));
+      onAnalysisComplete(result, previewUrl ?? '');
+    } catch (uploadError) {
+      console.error(uploadError);
+      setError(uploadError instanceof Error ? uploadError.message : 'Failed to analyze image.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleReset = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     setError(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
     <div className="w-full">
-      <div className="mb-4">
-        <label 
-          htmlFor="food-image" 
-          className="block w-full p-4 border-2 border-dashed rounded-lg cursor-pointer text-center hover:bg-gray-50 transition-colors"
-        >
-          <div className="flex flex-col items-center justify-center">
-            <svg 
-              className="w-8 h-8 mb-2 text-gray-500" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24" 
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth="2" 
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              ></path>
-            </svg>
-            <span className="text-sm font-medium text-gray-600">
-              {previewUrl ? 'Change image' : 'Upload a food photo'}
-            </span>
-          </div>
-          <input
-            ref={fileInputRef}
-            id="food-image"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-        </label>
-      </div>
-      
-      {previewUrl && (
-        <div className="mb-4">
-          <div className="relative rounded-lg overflow-hidden">
-            <img 
-              src={previewUrl} 
-              alt="Food preview" 
-              className="w-full h-48 object-cover"
-            />
-            <button
-              onClick={handleReset}
-              className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md"
-              type="button"
-            >
-              <svg 
-                className="w-5 h-5 text-gray-600" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24" 
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth="2" 
-                  d="M6 18L18 6M6 6l12 12"
-                ></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-      
-      {error && (
-        <div className="mb-4 p-2 bg-red-50 text-red-500 rounded-md text-sm">
-          {error}
-        </div>
-      )}
-      
-      {previewUrl && (
-        <button
-          onClick={handleUpload}
-          disabled={isLoading}
-          className={`w-full py-2 px-4 rounded-md text-white font-medium ${
-            isLoading 
-              ? 'bg-blue-300 cursor-not-allowed' 
-              : 'bg-blue-500 hover:bg-blue-600'
-          }`}
-          type="button"
-        >
-          {isLoading ? 'Analyzing...' : 'Analyze Food'}
-        </button>
-      )}
+      <label htmlFor="food-image" className="mb-4 block w-full cursor-pointer rounded-lg border-2 border-dashed p-4 text-center hover:bg-gray-50">
+        <span className="text-sm font-medium text-gray-600">{previewUrl ? 'Change image' : 'Upload a food photo'}</span>
+        <input ref={fileInputRef} id="food-image" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      </label>
+      {previewUrl && <div className="mb-4"><img src={previewUrl} alt="Food preview" className="h-48 w-full rounded-lg object-cover" /><button onClick={handleReset} className="mt-2 text-sm text-gray-500 underline" type="button">Remove image</button></div>}
+      {error && <div className="mb-4 rounded-md bg-red-50 p-2 text-sm text-red-600">{error}</div>}
+      {previewUrl && <button onClick={handleUpload} disabled={isLoading} className="w-full rounded-md bg-blue-500 px-4 py-2 font-medium text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-blue-300" type="button">{isLoading ? 'Analyzing...' : 'Analyze Food'}</button>}
     </div>
   );
 };
 
-export default ImageUploader; 
+export default ImageUploader;
